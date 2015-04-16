@@ -70,8 +70,8 @@ starting = ({count, opposed, favored}) ->
 # of the wizard class.
 generateSpellBook = (options, callback) ->
   {favored, opposed} = options
-  targetLevel = options.level or 1
-  startingCount = 3 + modifier (options.int or 10)
+  targetLevel = options.level
+  startingCount = 3 + modifier options.int
 
   book = cantrips {favored, opposed}
   book = book.concat starting {count: startingCount, favored, opposed}
@@ -106,10 +106,19 @@ if module.parent is null
   args = require 'yargs'
     .alias 'l', 'level'
     .alias 'i', 'int'
+    .alias 'f', 'favored'
+    .array 'favored'
+    .alias 'o', 'opposed'
+    .array 'opposed'
+    .default 'level', 1
+    .default 'int', 10
     .argv
 
-  args.favored = ['conjuration']
-  args.opposed = ['necromancy', 'transmutation']
+  if args.favored?.length != 1
+    return console.error 'needs a favored school'
+
+  if args.opposed?.length != 2
+    return console.error 'needs exactly 2 opposed schools'
 
   generateSpellBook args, (err, data) ->
     return console.error err if err
