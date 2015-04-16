@@ -1,6 +1,6 @@
 {
   "name": "pathfinder-gen-spellbook",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "create a random pathinder spellbook",
   "bin": {
     "pathfinder-gen-spellbook": "./gen-spellbook"
