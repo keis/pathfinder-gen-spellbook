@@ -23,8 +23,8 @@
     "docco": "~0.7.0"
   },
   "dependencies": {
+    "psrd-db": "^1.0.3",
     "underscore": "~1.8.3",
-    "yargs": "~3.7.2",
-    "psrd-db": "git+ssh://git@github.com/keis/psrd-db#master"
+    "yargs": "~3.7.2"
   }
 }

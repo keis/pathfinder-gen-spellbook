@@ -18,6 +18,7 @@ _ = require 'underscore'
 # Load the relevant data from the psrd-db. For now only spells from the core
 # rulebook is used.
 wizard = require 'psrd-db/core_rulebook/class/base/wizard'
+schools = require 'psrd-db/core_rulebook/arcane_schools'
 spells = require 'psrd-db/core_rulebook/spells'
 
 
@@ -117,8 +118,26 @@ if module.parent is null
   if args.favored?.length != 1
     return console.error 'needs a favored school'
 
+  schoolNames = (s.name for s in schools)
+
+  for f in args.favored
+    if f not in schoolNames
+      console.error "#{f} is not a valid school"
+      console.error "pick one of", schoolNames.join ', '
+      return
+
   if args.opposed?.length != 2
     return console.error 'needs exactly 2 opposed schools'
+
+  for o in args.opposed
+    if o not in schoolNames
+      console.error "#{o} is not a valid school"
+      console.error "pick one of", schoolNames.join ', '
+      return
+
+    if o in args.favored
+      console.error "#{o} can't be both a favored and opposed school"
+      return
 
   generateSpellBook args, (err, data) ->
     return console.error err if err
