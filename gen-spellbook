@@ -1,0 +1,117 @@
+#!/usr/bin/env coffee
+
+## Relevant rule snippet
+# A wizard begins play with a spellbook containing all 0-level wizard spells
+# (except those from his opposed schools, if any; see Arcane Schools) plus
+# three 1st-level spells of his choice. The wizard also selects a number of
+# additional 1st-level spells equal to his Intelligence modifier to add to the
+# spellbook.
+# Each time a character attains a new wizard level, he gains two spells of his
+# choice to add to his spellbook. The two free spells must be of spell levels
+# he can cast.
+
+## Implementation
+
+# This script makes heavy use of the all-in-one kitchensink module `underscore`
+_ = require 'underscore'
+
+# Load the relevant data from the psrd-db. For now only spells from the core
+# rulebook is used.
+wizard = require 'psrd-db/core_rulebook/class/base/wizard'
+spells = require 'psrd-db/core_rulebook/spells'
+
+
+# A generic method to get the ability modifier given the ability value. The
+# rulebook states this in form of a table but it can be reduced to a simple
+# linear function.
+modifier = (value) ->
+  Math.round (value - 10) / 2
+
+
+# Get the level of a spell. Only the level relevant for the wizard class should
+# be used.
+getLevel = (spell) ->
+  _.findWhere spell.levels, class: wizard.name
+    ?.level
+
+
+# Given a wizard level return the maximum spell level allowed. In the db the
+# number of allowed spells are encoded as a list starting with 0-level spells
+# with any levels not allowed omitted.
+maxLevel = (level) ->
+  wizard.levels[level - 1].spells.length - 1
+
+
+# Get a list of all cantrips (0-level spells) except those from opposing
+# schools.
+cantrips = ({opposed, favored}) ->
+  _.filter spells, (w) ->
+    w.school not in opposed and getLevel(w) == 0
+
+
+# Get a random selection of starting level spells. This method prefers to only
+# use spells from the favored school as long as there is enough available.
+starting = ({count, opposed, favored}) ->
+  pool = _.chain spells
+    .filter (w) -> getLevel(w) == 1
+    .groupBy (w) -> w.school in favored
+    .value()
+
+  s = _.sample pool[true], count
+
+  if s.length < count
+    s.concat _.sample pool[false], count - s.length
+  else
+    s
+
+
+# Create a randomly generated spellbook. In want of a explicit rule about
+# generating game world spell books this method follows the natural progression
+# of the wizard class.
+generateSpellBook = (options, callback) ->
+  {favored, opposed} = options
+  targetLevel = options.level or 1
+  startingCount = 3 + modifier (options.int or 10)
+
+  book = cantrips {favored, opposed}
+  book = book.concat starting {count: startingCount, favored, opposed}
+
+  if targetLevel < 2
+    return callback null, book
+
+  # For each level the book will be expanded and in each step it should be a
+  # legal spell book for a wizard of that level. The selection of spells is
+  # mostly random but there will always be a spell of the max level allowed and
+  # in the favored school added to give some flavor.
+  for level in [2..targetLevel]
+    maxl = maxLevel level
+    ms = _.chain spells
+      .filter (w) -> getLevel(w) == maxl
+      .filter (w) -> w.school in favored
+      .filter (w) -> not _.find book, (s) -> s.name == w.name
+      .value()
+    book.push _.sample ms
+
+    pool = _.chain spells
+      .filter (w) -> 1 <= getLevel(w) <= maxl
+      .filter (w) -> w.school not in opposed
+      .filter (w) -> not _.find book, (s) -> s.name == w.name
+      .value()
+    book.push _.sample pool
+
+  callback null, _.sortBy book, (s) -> getLevel s
+
+
+if module.parent is null
+  args = require 'yargs'
+    .alias 'l', 'level'
+    .alias 'i', 'int'
+    .argv
+
+  args.favored = ['conjuration']
+  args.opposed = ['necromancy', 'transmutation']
+
+  generateSpellBook args, (err, data) ->
+    return console.error err if err
+    _.each data, (spell) ->
+      console.log spell.name, getLevel spell

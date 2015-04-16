@@ -1,0 +1,30 @@
+{
+  "name": "pathfinder-gen-spellbook",
+  "version": "0.0.0",
+  "description": "create a random pathinder spellbook",
+  "bin": {
+    "pathfinder-gen-spellbook": "./gen-spellbook"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/keis/pathfinder-gen-spellbook.git"
+  },
+  "scripts": {
+    "docs": "docco -e .coffee gen-spellbook"
+  },
+  "keywords": [
+    "pathfinder",
+    "tarp",
+    "spellbook"
+  ],
+  "author": "David Keijser <keijser@gmail.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "docco": "~0.7.0"
+  },
+  "dependencies": {
+    "underscore": "~1.8.3",
+    "yargs": "~3.7.2",
+    "psrd-db": "git+ssh://git@github.com/keis/psrd-db#master"
+  }
+}
